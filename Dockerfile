@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 3000
 
 # Run the app
-CMD ["npm", "start"]
+CMD ["node", "mServerTest.js"]
