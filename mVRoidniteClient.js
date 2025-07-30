@@ -36,7 +36,7 @@ async function game() {
     let array_player = {};
     let array_playerMesh = {};
 
-    const ws = new WebSocket("ws://localhost:3000");
+    const ws = new WebSocket("wss://localhost:3000");
     ws.onopen = function (event) {
         ws.send("websocket-open");
     }
