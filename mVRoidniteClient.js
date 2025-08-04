@@ -2759,7 +2759,9 @@ async function game() {
                     //flashMaterial.visible = false;
                     let flashMesh = player.playerMesh.getObjectByName("Flash")
                     flashMesh.visible = false;
-                    ws.send("playerFlash "+myPlayerId+" "+flashMesh.visible)
+                    if(ws.readyState === WebSocket.OPEN){
+                        ws.send("playerFlash "+myPlayerId+" "+flashMesh.visible)
+                    }
                 }
 
                 if( current_game_time < player.lastFiringTime + mWeaponRecoilDuration[player.weapon]){
