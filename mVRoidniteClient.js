@@ -38,9 +38,9 @@ async function game() {
     let array_player = {};
     let array_playerMesh = {};
 
-    const ws = new WebSocket("ws://localhost:3000"); //local
-    //let wsurl = "wss://" + window.location.host + "/ws";
-    //const ws = new WebSocket(wsurl); //deploy
+    //const ws = new WebSocket("ws://localhost:3000"); //local
+    let wsurl = "wss://" + window.location.host + "/ws";
+    const ws = new WebSocket(wsurl); //deploy
 
 
     ws.onopen = function (event) {
@@ -3635,5 +3635,6 @@ async function game() {
         context2d.stroke();
     }
     //mDraw2Dcontext()
+
 
 }//init
