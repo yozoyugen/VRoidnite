@@ -1048,24 +1048,14 @@ function mConeTemp(player){
 function mCheckBuildIsUnique(build, ArrayBuild_){
     let judge = true;
 
-    /*for(var i = 0; i < ArrayBuild.length; i++){
-        let b = ArrayBuild[i].buildMesh; 
-        if(b==null){
-            continue
-        }
-        if(b.buildType == build.buildType &&
-            b.position.x == build.position.x && b.position.y == build.position.y &&  b.position.z == build.position.z ){
-                judge = false;
-                break
-                //return judge;
-        }
-    }*/
-    //let n = 0;
     Object.values(ArrayBuild_).forEach((v) => {
         //n += 1;
-        if(v!=null && v.buildMesh!=null){
-            let b = v.buildMesh;
+        //if(v!=null && v.buildMesh!=null){
+        //    let b = v.buildMesh;
             //console.log("b:", b.buildType);  
+
+        if(v!=null){
+            let b = v;
             if( b.position.x == build.position.x && b.position.y == build.position.y &&  b.position.z == build.position.z ){
                 //b.buildType == build.buildType &&
                     judge = false;
@@ -2864,6 +2854,380 @@ function mResetEdit(player, ArrayBuild_){
 
 }
 
+function mJudgeEditShape(player, ArrayBuild_){
+
+    let b = ArrayBuild_[player.edit_build_id];
+    //console.log("b:", b);  
+    if(b==null){
+        return;
+    }  
+
+    let px = b.position.x;
+    let py = b.position.y;
+    let pz = b.position.z;
+
+    if(b.buildType == 0){
+
+        let bodies = player.editCollider.zWall.bodies;  
+        if(b.dirType == "x"){
+            bodies = player.editCollider.xWall.bodies;  
+        }
+        for(var i=0; i<9; i++){
+            let body = bodies[i];
+            body.setEnabled(false);
+        }//
+
+        let s = b.wallEditGridSelected;
+
+        // s[8] s[7] s[6]  y+
+        // s[5] s[4] s[3] 
+        // s[2] s[1] s[0]  y0
+        //x+               x0
+        //z+               z0
+
+        if( !s[8] && !s[7] && !s[6] &&
+            !s[5] && !s[4] && !s[3] &&
+            !s[2] && !s[1] && !s[0]   ){
+            //no edit
+            b.editType = 0;
+        }else if( !s[8] && !s[7] && !s[6] &&
+                    !s[5] &&  s[4] && !s[3] &&
+                    !s[2] && !s[1] && !s[0]   ){
+            b.editType = 1;
+        }else if( !s[8] && !s[7] && !s[6] &&
+                    s[5] && !s[4] && !s[3] &&
+                    !s[2] && !s[1] && !s[0]   ){
+            b.editType = 2;
+        }else if( !s[8] && !s[7] && !s[6] &&
+                    !s[5] && !s[4] &&  s[3] &&
+                    !s[2] && !s[1] && !s[0]   ){
+            b.editType = 3;
+        }else if( !s[8] && !s[7] && !s[6] &&
+                    s[5] && !s[4] &&  s[3] &&
+                    !s[2] && !s[1] && !s[0]   ){
+            b.editType = 4;
+        }else if( !s[8] && !s[7] && !s[6] &&
+                    !s[5] &&  s[4] && !s[3] &&
+                    !s[2] &&  s[1] && !s[0]   ){
+            b.editType = 5;
+        }else if( !s[8] && !s[7] && !s[6] &&
+                    s[5] && !s[4] && !s[3] &&
+                    s[2] && !s[1] && !s[0]   ){
+            b.editType = 6;
+        }else if( !s[8] && !s[7] && !s[6] &&
+                    !s[5] && !s[4] &&  s[3] &&
+                    !s[2] && !s[1] &&  s[0]   ){
+            b.editType = 7;
+        }else if( !s[8] && !s[7] && !s[6] &&
+                    !s[5] && !s[4] &&  s[3] &&
+                    !s[2] &&  s[1] &&  s[0]   ){
+            b.editType = 8;
+        }else if( !s[8] && !s[7] && !s[6] &&
+                    s[5] && !s[4] && !s[3] &&
+                    s[2] &&  s[1] && !s[0]   ){
+            b.editType = 9;
+        }else if(  s[8] &&  s[7] && !s[6] &&
+                    s[5] && !s[4] && !s[3] &&
+                    !s[2] && !s[1] && !s[0]   ){
+            b.editType = 10;
+        }else if( !s[8] &&  s[7] &&  s[6] &&
+                    !s[5] && !s[4] &&  s[3] &&
+                    !s[2] && !s[1] && !s[0]   ){
+            b.editType = 11;
+        }else if(  s[8] &&  s[7] &&  s[6] &&
+                    !s[5] && !s[4] && !s[3] &&
+                    !s[2] && !s[1] && !s[0]   ){
+            b.editType = 12;
+        }else if( !s[8] && !s[7] && !s[6] &&
+                    s[5] && !s[4] &&  s[3] &&
+                    s[2] && !s[1] && !s[0]   ){
+            b.editType = 13;
+        }else if( !s[8] && !s[7] && !s[6] &&
+                    s[5] && !s[4] &&  s[3] &&
+                    !s[2] && !s[1] &&  s[0]   ){
+            b.editType = 14;
+        }else if( !s[8] && !s[7] && !s[6] &&
+                    !s[5] &&  s[4] &&  s[3] &&
+                    !s[2] &&  s[1] &&  s[0]   ){
+            b.editType = 15;
+        }else if( !s[8] && !s[7] && !s[6] &&
+                    s[5] &&  s[4] && !s[3] &&
+                    s[2] &&  s[1] && !s[0]   ){
+            b.editType = 16;
+        }else if( !s[8] && !s[7] && !s[6] &&
+                    !s[5] &&  s[4] && !s[3] &&
+                    s[2] &&  s[1] &&  s[0]   ){
+            b.editType = 17;
+        }else if(  s[8] &&  s[7] &&  s[6] &&
+                    !s[5] &&  s[4] && !s[3] &&
+                    !s[2] &&  s[1] && !s[0]   ){
+            b.editType = 18;
+        }else if(  s[8] &&  s[7] &&  s[6] &&
+                    s[5] &&  s[4] &&  s[3] &&
+                    !s[2] && !s[1] && !s[0]   ){
+            b.editType = 19;
+        }else if(  s[8] &&  s[7] && !s[6] &&
+                    s[5] &&  s[4] && !s[3] &&
+                    s[2] &&  s[1] && !s[0]   ){
+            b.editType = 20;
+        }else if( !s[8] &&  s[7] &&  s[6] &&
+                    !s[5] &&  s[4] &&  s[3] &&
+                    !s[2] &&  s[1] &&  s[0]   ){
+            b.editType = 21;
+        }else if(  s[8] &&  s[7] &&  s[6] &&
+                    s[5] &&  s[4] &&  s[3] &&
+                    s[2] && !s[1] && !s[0]   ){
+            b.editType = 22;
+        }else if(  s[8] &&  s[7] &&  s[6] &&
+                    s[5] &&  s[4] &&  s[3] &&
+                    !s[2] && !s[1] &&  s[0]   ){
+            b.editType = 23;
+        }else if(  s[8] &&  s[7] &&  s[6] &&
+                    s[5] &&  s[4] && !s[3] &&
+                    s[2] &&  s[1] && !s[0]   ){
+            b.editType = 24;
+        }else if(  s[8] &&  s[7] &&  s[6] &&
+                    !s[5] &&  s[4] &&  s[3] &&
+                    !s[2] &&  s[1] &&  s[0]   ){
+            b.editType = 25;
+        }else{ 
+            console.log("undefined edit shape")
+            for(var i=0; i<9; i++){
+                b.wallEditGridSelected[i] = b.lastEditGridSelected[i];
+            }
+            return;
+        }
+
+        b.doorDir = 1;
+        if( b.dirType == "z" && b.position.z < player.playerMesh.position.z ){
+            b.doorDir = -1;
+        }else if( b.dirType == "x" && b.position.x > player.playerMesh.position.x ){
+            b.doorDir = -1;
+        }
+
+
+    }else if(b.buildType == 1){
+
+        let bodies = player.editCollider.Floor.bodies;     
+        for(var i=0; i<4; i++){
+            let body = bodies[i];
+            body.setEnabled(false);
+        }//
+
+        let s = b.floorEditGridSelected;
+        
+        //x+  s[2] s[3]  
+        //    s[0] s[1]   
+        //z0,x0        z+
+        
+        if( !s[2] && !s[3] &&
+            !s[0] && !s[1]    ){
+            //no edit
+            b.editType = 0;
+        }else if( !s[2] && !s[3] &&
+                    s[0] && !s[1]    ){
+            b.editType = 1;
+        }else if( !s[2] && !s[3] &&
+                    !s[0] &&  s[1]    ){
+            b.editType = 2;
+        }else if(  s[2] && !s[3] &&
+                    !s[0] && !s[1]    ){
+            b.editType = 3;
+        }else if( !s[2] &&  s[3] &&
+                    !s[0] && !s[1]    ){
+            b.editType = 4;
+        }else if( !s[2] && !s[3] &&
+                    s[0] &&  s[1]    ){
+            b.editType = 5;
+        }else if(  s[2] &&  s[3] &&
+                    !s[0] && !s[1]    ){
+            b.editType = 6;
+        }else if(  s[2] && !s[3] &&
+                    s[0] && !s[1]    ){
+            b.editType = 7;
+        }else if( !s[2] &&  s[3] &&
+                    !s[0] &&  s[1]    ){
+            b.editType = 8;
+        }else if( !s[2] &&  s[3] &&
+                    s[0] && !s[1]    ){
+            //b.editType = 9;
+        }else if(  s[2] && !s[3] &&
+                    !s[0] &&  s[1]    ){
+            //b.editType = 10;
+        }else if(  s[2] &&  s[3] &&
+                    !s[0] &&  s[1]    ){
+            b.editType = 11;
+        }else if(  s[2] &&  s[3] &&
+                    s[0] && !s[1]    ){
+            b.editType = 12;
+        }else if( !s[2] &&  s[3] &&
+                    s[0] &&  s[1]    ){
+            b.editType = 13;
+        }else if(  s[2] && !s[3] &&
+                    s[0] &&  s[1]    ){
+            b.editType = 14;
+        }else{ 
+            console.log("undefined edit shape")
+            for(var i=0; i<4; i++){
+                b.floorEditGridSelected[i] = b.lastEditGridSelected[i];
+            }
+            return;
+        }
+        console.log("b.editType:", b.editType);
+
+    }else if(b.buildType == 2){
+
+        let bodies = player.editCollider.Slope.bodies;     
+        for(var i=0; i<8; i++){
+            let body = bodies[i];
+            body.setEnabled(false);
+        }//
+
+        //let g = b.slopeEditGridSelected;
+        let s = b.slopeGridSelectOrder;
+
+        //x+  g[6]  g[3]  g[7]
+        //    g[0]        g[1]
+        //    g[4]  g[2]  g[5]   
+        //z0,x0        z+
+
+        if(s.length == 2){
+            if( s[0]==0 ){
+                // z+ slope                    
+                b.editType = 0;
+                b.dirType = "z+"
+            }else if( s[0]==1 ){
+                // z- slope                    
+                b.editType = 1;
+                b.dirType = "z-"
+            }else if( s[0]==2 ){
+                // x+ slope                    
+                b.editType = 2;
+                b.dirType = "x+"
+            }else if( s[0]==3 ){
+                // x- slope                    
+                b.editType = 3;
+                b.dirType = "x-"
+            }else if( s[0]==4 && s[1]==5 ){
+                // z+ slope                    
+                b.editType = 4;
+                b.dirType = "z+"
+            }else if( s[0]==5 && s[1]==4 ){
+                b.editType = 5;
+                b.dirType = "z-"
+            }else if( s[0]==5 && s[1]==7 ){
+                b.editType = 6;
+                b.dirType = "x+"
+            }else if( s[0]==7 && s[1]==5 ){
+                b.editType = 7;
+                b.dirType = "x-"
+            }else if( s[0]==7 && s[1]==6 ){
+                b.editType = 8;
+                b.dirType = "z-"
+            }else if( s[0]==6 && s[1]==7 ){
+                b.editType = 9;
+                b.dirType = "z+"
+            }else if( s[0]==6 && s[1]==4 ){
+                b.editType = 10;
+                b.dirType = "x-"
+            }else if( s[0]==4 && s[1]==6 ){
+                b.editType = 11;
+                b.dirType = "x+"
+            }
+
+        }else if(s.length == 0){
+            if(b.dirType == "z+"){
+                b.editType = 0;
+            }else if(b.dirType == "z-"){
+                b.editType = 1;
+            }else if(b.dirType == "x+"){
+                b.editType = 2;
+            }else if(b.dirType == "x-"){
+                b.editType = 3;
+            }
+
+        }
+
+        //b.edgePoints = mCreateSlopeEdgePoints(px, py, pz, b.dirType, b.editType)
+        //console.log("b.edgePoints:", b.edgePoints);
+        
+    }else if(b.buildType == 3){
+
+        let bodies = player.editCollider.Cone.bodies;     
+        for(var i=0; i<4; i++){
+            let body = bodies[i];
+            body.setEnabled(false);
+        }//
+
+        let s = b.coneEditGridSelected;
+        
+        //x+  s[2] s[3]  
+        //    s[0] s[1]   
+        //z0,x0        z+
+        
+        if( !s[2] && !s[3] &&
+            !s[0] && !s[1]    ){
+            //no edit
+            b.editType = 0;
+        }else if( !s[2] && !s[3] &&
+                    s[0] && !s[1]    ){
+            b.editType = 1;
+        }else if( !s[2] && !s[3] &&
+                    !s[0] &&  s[1]    ){
+            b.editType = 2;
+        }else if(  s[2] && !s[3] &&
+                    !s[0] && !s[1]    ){
+            b.editType = 3;
+        }else if( !s[2] &&  s[3] &&
+                    !s[0] && !s[1]    ){
+            b.editType = 4;
+        }else if( !s[2] && !s[3] &&
+                    s[0] &&  s[1]    ){
+            b.editType = 5;
+        }else if(  s[2] &&  s[3] &&
+                    !s[0] && !s[1]    ){
+            b.editType = 6;
+        }else if(  s[2] && !s[3] &&
+                    s[0] && !s[1]    ){
+            b.editType = 7;
+        }else if( !s[2] &&  s[3] &&
+                    !s[0] &&  s[1]    ){
+            b.editType = 8; 
+        }else if( !s[2] &&  s[3] &&
+                    s[0] && !s[1]    ){
+            b.editType = 9;
+        }else if(  s[2] && !s[3] &&
+                    !s[0] &&  s[1]    ){
+            b.editType = 10;
+        }else if(  s[2] &&  s[3] &&
+                    !s[0] &&  s[1]    ){
+            b.editType = 11;
+        }else if(  s[2] &&  s[3] &&
+                    s[0] && !s[1]    ){
+            b.editType = 12;
+        }else if( !s[2] &&  s[3] &&
+                    s[0] &&  s[1]    ){
+            b.editType = 13;
+        }else if(  s[2] && !s[3] &&
+                    s[0] &&  s[1]    ){
+            b.editType = 14;
+        }else{ 
+            console.log("undefined edit shape")
+            for(var i=0; i<4; i++){
+                b.coneEditGridSelected[i] = b.lastEditGridSelected[i];
+            }
+            return;
+        }
+        console.log("b.editType:", b.editType);
+
+        //b.edgePoints = mCreateConeEdgePoints(px, py, pz, b.editType)
+    }
+
+
+}
+
+
+
 function mApplyEditShape(player, ArrayBuild_, scene_, world_){
 
     let b = ArrayBuild_[player.edit_build_id];
@@ -3546,6 +3910,7 @@ export {
     mSetEditSelectMode,
     mSelectEditGrid,
     mResetEdit,
+    mJudgeEditShape,
     mApplyEditShape,
     mSetEditShape,
     mSetEditCollider,

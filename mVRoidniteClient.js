@@ -11,7 +11,9 @@ import RAPIER from '@dimforge/rapier3d-compat'
 
 //--- my build function
 import * as BUILD from '/mBuild.module.js';
+import * as UTIL from '/mUtil.module.js';
 import * as VROID from '/mVRoid.module.js';
+//import e from 'express';
 //console.log("BUILD:", BUILD);
 
 
@@ -36,11 +38,11 @@ async function game() {
     let array_player = {};
     let array_playerMesh = {};
 
-    //const ws = new WebSocket("wss://localhost:3000/ws");
-    console.log("host:", window.location.host)
-    let wsurl = "wss://" + window.location.host + "/ws";
-    const ws = new WebSocket(wsurl);
-    
+    const ws = new WebSocket("ws://localhost:3000"); //local
+    //let wsurl = "wss://" + window.location.host + "/ws";
+    //const ws = new WebSocket(wsurl); //deploy
+
+
     ws.onopen = function (event) {
         ws.send("websocket-open");
     }
@@ -105,10 +107,30 @@ async function game() {
                 case "playerEmote":
                     mPlayerEmote(arr);
                     break
+                case "playerHealthChanged":
+                    mPlayerHealthChanged(arr);
+                    break
+                case "playerRespawned":
+                    mPlayerRespawned(arr);
+                    break
                 case "delete-player":
                     mDeletePlayer(arr);
                     break
-                    
+                case "playerBuild":
+                    mPlayerBuild(parts);
+                    break
+                case "buildHealthChanged":
+                    mBuildHealthChanged(parts);
+                    break
+                case "buildDestroy":
+                    mBuildDestory(parts);
+                    break
+                case "add-init-build":
+                    mAddInitBuild(parts);
+                    break                    
+                case "playerEdit":
+                    mPlayerEdit(parts);
+                    break
                 default:
             }//
 
@@ -509,9 +531,10 @@ async function game() {
 
     
     let ArrayBuild = {}; //[]; // should use object?
-    let build_id = 0;
+    //let build_id = 0;
 
-    function mAddBuild(col, mesh, body, edgePoints=null, player_id = -1){
+    function mAddBuild(col, mesh, body, edgePoints=null, player_id = -1, build_id){
+        //console.log("mAddBuild:");
 
         //let position = new Object();
         let position = new THREE.Vector3();
@@ -549,11 +572,11 @@ async function game() {
             //console.log("b.isGrounded:", b.isGrounded);
         ArrayBuild[build_id] = b;
             //console.log("b:", b);
-        build_id += 1; 
+        //build_id += 1; // -> off-line single play
     }
 
 
-    function mCreateWall(px, py, pz, type="z", player_id = -1){
+    function mCreateWall(px, py, pz, type="z", player_id = -1, build_id){
         let Lx = grid_size;
         let Ly = gridH_size;
         let Lz = buildThick;
@@ -572,15 +595,14 @@ async function game() {
         ArrayMesh.push(wallMesh);
         ArrayBody.push(wallBody);
         
-        mAddBuild(col, wallMesh, wallBody, BUILD.mCreateWallEdgePoints(px, py, pz, type), player_id)
-        //build_id += 1; 
+        mAddBuild(col, wallMesh, wallBody, BUILD.mCreateWallEdgePoints(px, py, pz, type), player_id, build_id)
     }
 
     world.timestep = 0.0
     world.step()
     
 
-    function mCreateSlope(px, py, pz, type="z-", player_id = -1){
+    function mCreateSlope(px, py, pz, type="z-", player_id = -1, build_id){
         //console.log("mCreateSlope:"+type)
         let L = Math.sqrt(grid_size*grid_size+gridH_size*gridH_size)
             //console.log("L:"+L)
@@ -605,12 +627,11 @@ async function game() {
 
         //console.log("slopeCollider.handle:", slopeCollider.handle)
 
-        mAddBuild(col, slopeMesh, slopeBody, BUILD.mCreateSlopeEdgePoints(px, py, pz, type), player_id)
-        //build_id += 1; 
+        mAddBuild(col, slopeMesh, slopeBody, BUILD.mCreateSlopeEdgePoints(px, py, pz, type), player_id, build_id)
     }
 
 
-    function mCreateFloor(px, py, pz, player_id = -1){    
+    function mCreateFloor(px, py, pz, player_id = -1, build_id){    
         
         let floorMesh = BUILD.mCreateFloorMesh();
         scene.add(floorMesh)
@@ -622,12 +643,11 @@ async function game() {
         ArrayMesh.push(floorMesh);
         ArrayBody.push(floorBody);
 
-        mAddBuild(col, floorMesh, floorBody, BUILD.mCreateFloorEdgePoints(px, py, pz), player_id)
-        //build_id += 1; 
+        mAddBuild(col, floorMesh, floorBody, BUILD.mCreateFloorEdgePoints(px, py, pz), player_id, build_id)
     }
 
     
-    function mCreateCone(px, py, pz, player_id = -1){    
+    function mCreateCone(px, py, pz, player_id = -1, build_id){    
         
         let geometry = BUILD.mCreateConeGeometry();
         //console.log("geometry:", geometry.attributes);
@@ -644,11 +664,10 @@ async function game() {
         ArrayMesh.push(coneMesh);
         ArrayBody.push(coneBody);
 
-        mAddBuild(col, coneMesh, coneBody, BUILD.mCreateConeEdgePoints(px, py, pz), player_id)
-        //build_id += 1; 
+        mAddBuild(col, coneMesh, coneBody, BUILD.mCreateConeEdgePoints(px, py, pz), player_id, build_id)
     }
 
-
+/*
     mCreateWall(-grid_size*2+grid_size/2, gridH_size/2, -grid_size*2)
     mCreateWall(-grid_size*3+grid_size/2, gridH_size/2, -grid_size*2)
     for(var i=0; i<grid_num; i++){
@@ -688,7 +707,7 @@ async function game() {
     mCreateCone(grid_size*5+grid_size/2, gridH_size/2, grid_size/2);
 
     console.log("Terrain build END")
-
+*/
 
     let playerRadius = 0.3 * mScale; //0.35 * mScale;
     let playerCapsuleH = playerRadius*3.3; //playerRadius*3;
@@ -1135,6 +1154,241 @@ async function game() {
 
     }
 
+    function mPlayerHealthChanged(v){
+        //console.log("mPlayerMovement:"+v);
+
+        let id = parseInt(v[0])
+        //console.log( 'id:'+ id);
+        let player = array_player[ id ];
+        if(player != null){
+            let h = parseInt(v[1])
+            let s = parseInt(v[2])
+            let flag_ = JSON.parse(v[3])
+            player.health = h;
+            player.shield = s;
+            player.receivedDamage = flag_;
+
+            if(player.player_id==myPlayerId){
+                mDisplayRecieveDamageEffect();
+            }
+
+            if(player.health <= 0){
+                mPlayerDead(player)
+            }
+            
+        }
+
+    }
+
+    function mPlayerRespawned(v){
+        //console.log("mPlayerMovement:"+v);
+
+        let id = parseInt(v[0])
+        //console.log( 'id:'+ id);
+        let player = array_player[ id ];
+        if(player != null){
+            player.arrayAction[15].stop();
+            player.shield = 100;
+            player.health = 100;
+            player.playerBody.setEnabled(true);
+            player.playerBody.setTranslation({ x: player.initPosition.x, y: player.initPosition.y, z: player.initPosition.z}, true);
+            mUpdateHealthGauge()            
+        }
+
+    }
+
+    function mPlayerBuild(v){
+        console.log("mPlayerBuild:"+v);
+        // funcname: v[0]
+        let buildType = parseInt(v[1]);
+        let px = parseFloat(v[2]);
+        let py = parseFloat(v[3]);
+        let pz = parseFloat(v[4]);
+        let dirType = v[5];
+        let player_id = parseInt(v[6]);
+        let build_id = parseInt(v[7]);
+
+        if(buildType == 0){
+            //console.log("buildType:"+buildType);
+            mCreateWall(px, py, pz, dirType, player_id, build_id);
+        }else if(buildType == 1){
+            mCreateFloor(px, py, pz, player_id, build_id);
+        }if(buildType == 2){
+            mCreateSlope(px, py, pz, dirType, player_id, build_id);
+        }if(buildType == 3){
+            mCreateCone(px, py, pz, player_id, build_id);
+        }
+
+        mPlayAudioBuffer(mArrayAudio[4])
+
+        //console.log("ArrayBuild:", ArrayBuild);
+    }
+
+    function mBuildHealthChanged(v){
+        console.log("BuildHealthChanged:"+v);
+        // funcname: v[0]
+        let id = parseInt(v[1]);
+        let h = parseInt(v[2]);
+        let b = ArrayBuild[id];
+        if(b!=null){
+            mPlayAudioBuffer(mArrayAudio[0], 0.5);
+            b.health = h;
+            mSetBuildOpacity(b)
+        }
+
+    }
+
+    function mSetBuildOpacity(b){
+        let a = b.health / b.maxHealth * 0.7 + 0.3;
+        //console.log("a:"+a);
+
+        if( b.buildMesh.isMesh ){
+            //console.log("a:"+a);
+            b.buildMesh.material.opacity = a
+        }else if( b.buildMesh.isGroup ){
+            for(var i=0; i<b.buildMesh.children.length; i++){
+                b.buildMesh.children[i].material.opacity = a
+            }
+        }
+    }
+
+    function mBuildDestory(v){
+        let id = parseInt(v[1]);
+        let b = ArrayBuild[id];
+        if(b!=null){
+            scene.remove(b.buildMesh);
+            b.buildMesh = null;
+            for(var i=0; i<b.collider.length; i++){
+                world.removeCollider(b.collider[i]);
+            }
+            let cv = mCalcDistanceFactor(b.position, c_player.playerMesh.position, gridH_size*grid_num)
+            console.log("cv:", cv)
+            mPlayAudioBuffer(mArrayAudio[2], 2.0*cv);
+
+            delete ArrayBuild[b.build_id];
+        }
+    }
+
+    function mAddInitBuild(v){
+        let buildType = parseInt(v[1]);
+        let px = parseFloat(v[2]);
+        let py = parseFloat(v[3]);
+        let pz = parseFloat(v[4]);
+        let dirType = v[5];
+        let player_id = parseInt(v[6]);
+        let build_id = parseInt(v[7]);
+        let health = parseInt(v[8]);
+        let editType = parseInt(v[9]);
+        let doorDir = parseInt(v[10]);
+
+        if(buildType == 0){
+            mCreateWall(px, py, pz, dirType, player_id, build_id);
+        }else if(buildType == 1){
+            mCreateFloor(px, py, pz, player_id, build_id);
+        }if(buildType == 2){
+            mCreateSlope(px, py, pz, dirType, player_id, build_id);
+        }if(buildType == 3){
+            mCreateCone(px, py, pz, player_id, build_id);
+        }
+
+        let b = ArrayBuild[build_id];
+        if( b != null){
+            b.health = health;
+            mSetBuildOpacity(b)
+
+            b.editType = editType;
+            b.doorDir = doorDir;
+
+            b.edgePoints = UTIL.mCreateBuildEdgePoints(b);
+            BUILD.mSetEditShape(b, ArrayBuild, scene)
+            BUILD.mSetEditCollider(b, world)
+        }
+
+    }
+
+    function mPlayerEdit(v){
+        console.log("mPlayerEdit:"+v);
+        // funcname: v[0]
+        let player_id = parseInt(v[1]);
+        let build_id = parseInt(v[2]);
+        let editType = parseInt(v[3]);
+        let dirType = v[4];
+        let doorDir = parseInt(v[5]);
+
+        let player = array_player[ player_id ];
+        if(player != null){
+            
+            let b = ArrayBuild[build_id];
+            if(b != null){
+                b.editType = editType;
+                b.dirType = dirType;
+                b.doorDir = doorDir;
+
+                let px = b.position.x;
+                let py = b.position.y;
+                let pz = b.position.z;
+                let buildType = b.buildType;
+
+                /*if(buildType == 0){
+                    b.edgePoints = UTIL.mCreateWallEdgePoints(px, py, pz, b.dirType, b.editType)
+                }else if(buildType == 1){
+                    b.edgePoints = UTIL.mCreateFloorEdgePoints(px, py, pz, b.editType)
+                }if(buildType == 2){
+                    b.edgePoints = UTIL.mCreateSlopeEdgePoints(px, py, pz, b.dirType, b.editType)
+                }if(buildType == 3){
+                    b.edgePoints = UTIL.mCreateConeEdgePoints(px, py, pz, b.editType)
+                }*/
+                b.edgePoints = UTIL.mCreateBuildEdgePoints(b);
+
+                BUILD.mSetEditShape(b, ArrayBuild, scene)
+                BUILD.mSetEditCollider(b, world)
+
+                if( b.buildType==0 && 
+                    (b.editType==5 || b.editType==6 || b.editType==7 || b.editType==13 ||b.editType==14)  ){
+                    let cv = mCalcDistanceFactor(b.position, c_player.playerMesh.position, grid_size*3)
+                    mPlayAudioBuffer(mArrayAudio[10], cv); // open door
+                }
+
+            }
+
+
+            if(player_id == myPlayerId){
+                c_player.nowEdit = false;
+
+                if(c_player.edit_build_type == 0){
+                    c_player.zWallGrid.visible = false;
+                    c_player.xWallGrid.visible = false;
+                }else if(c_player.edit_build_type == 1){
+                    c_player.FloorGrid.visible = false;
+                }else if(c_player.edit_build_type == 2){
+                    c_player.SlopeGrid.visible = false;
+                }else if(c_player.edit_build_type == 3){
+                    c_player.ConeGrid.visible = false;
+                }
+
+                if(b != null){
+                    b.buildMesh.visible = true;
+                    console.log("b.buildMesh:", b.buildMesh);
+                    mPlayAudioBuffer(mArrayAudio[8])
+                }
+
+                c_player.mode = c_player.lastMode;
+                ws.send("playerModeChange "+myPlayerId+" "+c_player.mode)
+
+                if(c_player.mode == 1 && c_player.weapon==0){
+                    c_player.weaponChange = true;
+                    mPlayAudioBuffer(mArrayAudio[5])
+                }
+
+            }
+        }
+
+
+        //console.log("ArrayBuild:", ArrayBuild);
+    }
+
+
+
     //let array_player = {};
     array_player[c_player.player_id] = c_player;
     //array_player[bot_player.player_id] = bot_player;
@@ -1453,7 +1707,7 @@ async function game() {
         if(c_player.buildTemp != null){
             c_player.buildTemp.visible = false;
         }
-        console.log('c_player.weapon:', c_player.weapon, ", ", c_player.weaponChange);
+        //console.log('c_player.weapon:', c_player.weapon, ", ", c_player.weaponChange);
     }
 
     function mBuildModeWall(){
@@ -1523,23 +1777,28 @@ async function game() {
     function mEditMode(){
         mQuitEmote();
         //if( mJudgeEdit(c_player, ArrayBuild, world) && c_player.mode != 3 ){
-        if( BUILD.mJudgeEdit(c_player, ArrayBuild, world) && c_player.mode != 3 ){
-            c_player.lastMode = c_player.mode;
-            c_player.mode = 3;
-            ws.send("playerModeChange "+myPlayerId+" "+c_player.mode)
+        //if( BUILD.mJudgeEdit(c_player, ArrayBuild, world) && c_player.mode != 3 ){
+        if( c_player.mode != 3 ){
 
-            mCanselReload()
+            if( BUILD.mJudgeEdit(c_player, ArrayBuild, world) ){
+                c_player.lastMode = c_player.mode;
+                c_player.mode = 3;
+                ws.send("playerModeChange "+myPlayerId+" "+c_player.mode)
 
-            mPlayAudioBuffer(mArrayAudio[7])
-            if(c_player.edit_build_type == 0){
-                //mSetWallEditGrid(c_player, ArrayBuild, world_edit);
-                BUILD.mSetWallEditGrid(c_player, ArrayBuild, world_edit);
-            }else if(c_player.edit_build_type == 1){
-                BUILD.mSetFloorEditGrid(c_player, ArrayBuild, world_edit);
-            }else if(c_player.edit_build_type == 2){
-                BUILD.mSetSlopeEditGrid(c_player, ArrayBuild, world_edit);
-            }else if(c_player.edit_build_type == 3){
-                BUILD.mSetConeEditGrid(c_player, ArrayBuild, world_edit);
+                mCanselReload()
+
+                mPlayAudioBuffer(mArrayAudio[7])
+                if(c_player.edit_build_type == 0){
+                    //mSetWallEditGrid(c_player, ArrayBuild, world_edit);
+                    BUILD.mSetWallEditGrid(c_player, ArrayBuild, world_edit);
+                }else if(c_player.edit_build_type == 1){
+                    BUILD.mSetFloorEditGrid(c_player, ArrayBuild, world_edit);
+                }else if(c_player.edit_build_type == 2){
+                    BUILD.mSetSlopeEditGrid(c_player, ArrayBuild, world_edit);
+                }else if(c_player.edit_build_type == 3){
+                    BUILD.mSetConeEditGrid(c_player, ArrayBuild, world_edit);
+                }
+
             }
             
         }else if(c_player.mode == 3){
@@ -1550,6 +1809,16 @@ async function game() {
 
     function mFinishEditMode(){
 
+        BUILD.mJudgeEditShape(c_player, ArrayBuild)
+        let b = ArrayBuild[c_player.edit_build_id];
+        if(b != null){
+            ws.send("playerEdit "+c_player.player_id+" "+c_player.edit_build_id+" "+b.editType
+                    +" "+b.dirType+" "+b.doorDir);
+        }
+        
+        // Do after recieve response from server
+
+        /*
         BUILD.mApplyEditShape(c_player, ArrayBuild, scene, world)
         c_player.nowEdit = false;
         
@@ -1584,6 +1853,7 @@ async function game() {
             c_player.weaponChange = true;
             mPlayAudioBuffer(mArrayAudio[5])
         }
+        */
     }
 
     //--- Mouse event ---//
@@ -1653,7 +1923,7 @@ async function game() {
 
     canvas2d.addEventListener('mousedown', function(e)
     {
-        console.log('mousedown:', e.button)
+        //console.log('mousedown:', e.button)
 
         if(document.pointerLockElement==null){
             //mPlayAudioBuffer(mArrayAudio[1])
@@ -2053,7 +2323,9 @@ async function game() {
             //}
             //console.log("c_player.isGrounded:", [old_isGrounded, c_player.isGrounded])
             if(old_isGrounded != c_player.isGrounded  || !c_player.isGrounded){
-                ws.send("playerGrounded "+myPlayerId+" "+c_player.isGrounded)
+                if(ws.readyState === WebSocket.OPEN){
+                    ws.send("playerGrounded "+myPlayerId+" "+c_player.isGrounded)
+                }
             }
         //}
 
@@ -2341,9 +2613,10 @@ async function game() {
             //for(var i=0; i<array_player.length; i++){
             //Object.values(array_player).forEach((player) => {
                 let player = c_player;
+                //console.log("player.health:", player.health);
 
                 if(player.health<=0){
-                    return;
+                    //return;
                 }
                 //console.log("player.player_id:", player.player_id);
                 
@@ -2358,7 +2631,7 @@ async function game() {
                 //console.log("muzzlePos:", muzzlePos, ", ", i);
                 if(muzzlePos==null){
                     //continue;
-                    return;
+                    //return;
                 }
 
                 if(current_game_time >= player.weaponChangedTime + mWeaponReadyDuration[player.weapon]){
@@ -2656,9 +2929,10 @@ async function game() {
 
         if(b!=null){ // Build damage
             //console.log("ArrayBuild:%o", ArrayBuild);
-            mPlayAudioBuffer(mArrayAudio[0], 0.5);
+
+            //--- Do in Server
+            /*mPlayAudioBuffer(mArrayAudio[0], 0.5);
             b.health -= d;
-            //b.buildMesh.material.opacity = b.health / b.maxHealth * 0.5 + 0.5;
             if( b.buildMesh.isMesh ){
                 b.buildMesh.material.opacity = b.health / b.maxHealth * 0.7 + 0.3;
             }else if( b.buildMesh.isGroup ){
@@ -2670,20 +2944,13 @@ async function game() {
             if(b.health<=0){
                 mDestroyBuild(b);
             }
+            */
+            ws.send("buildDamaged "+b.build_id+" "+d)
         }
 
         let p = array_player[hit.collider.player_id]; // player who recieved damage 
 
-            if(p!=null){
-            //console.log("bot_player damage");
-            //if(weapon==0){
-            //    d = 20;
-            //}
-
-            /*if(p.player_id==bot_player.player_id && props.botAction==false && props.botSleep==false){
-                props.botAction = true;
-                mSetBotAction(props.botAction)
-            }*/
+        if(p!=null){
 
             if(player.player_id==myPlayerId){
                 displayDamageTime = new Date().getTime();
@@ -2697,8 +2964,10 @@ async function game() {
             }
             console.log("d:", d);       
             player.displayDamage = d;
-            p.receivedDamage = true;
 
+            //--- Do in Server
+            /*
+            p.receivedDamage = true;
             if(p.shield > 0){
                 p.shield -= d;
                 if(p.shield < 0){
@@ -2725,8 +2994,20 @@ async function game() {
             if(p.health <= 0){
                 mPlayerDead(p)
             }
+            */
+            ws.send("playerDamaged "+p.player_id+" "+d)
+            //
 
         }
+    }
+
+    function mDisplayRecieveDamageEffect(){
+        mPlayAudioBuffer(mArrayAudio[16])
+        mUpdateHealthGauge(); 
+        canvasDamage.style.visibility ="visible";
+        setTimeout(() => {
+            canvasDamage.style.visibility ="hidden";
+        }, 100);        
     }
 
     function mPlayerDead(player){
@@ -2738,18 +3019,17 @@ async function game() {
         //mSetBotAction(props.botAction)
 
         player.playerBody.setEnabled(false);
-        scene.remove(player.firingMesh);
-        player.firingMesh = null;
+        if(player.firingMesh!=null){
+            scene.remove(player.firingMesh);
+            player.firingMesh = null;
+        }
         player.playerMesh.getObjectByName("Flash").visible = false;
 
-        if(player.player_id == myPlayerId){
-            
-        }
-
-        mRespawnPlayer(player);
+        //mRespawnPlayer(player); // do in server
     }
 
-    function mRespawnPlayer(player){
+    /*function mRespawnPlayer(player){
+        console.log("mRespawnPlayer:")
         setTimeout(() => {
             player.arrayAction[15].stop();
             player.shield = 100;
@@ -2758,7 +3038,7 @@ async function game() {
             player.playerBody.setTranslation({ x: player.initPosition.x, y: player.initPosition.y, z: player.initPosition.z}, true);
             mUpdateHealthGauge()
         }, 3000);
-    }
+    }*/
 
     function mDisplayDamage(d){
         var W_ = canvas2d.width;
@@ -2911,8 +3191,8 @@ async function game() {
             for(var i=0; i<b.collider.length; i++){
                 world.removeCollider(b.collider[i]);
             }
-            let cv = mCalcDistanceFactor(b.position, c_player.playerMesh.position, gridH_size*grid_num)
-            console.log("cv:", cv)
+            let cv = mCalcDistanceFactor(b.position, c_player.playerMesh.position, grid_size*grid_num)
+            //console.log("cv:", cv)
             mPlayAudioBuffer(mArrayAudio[2], 2.0*cv);
 
             let c = b.connectedBuild.slice();
@@ -3099,19 +3379,23 @@ async function game() {
         let py = build.position.y;
         let pz = build.position.z;
         let player_id = player.player_id;
+        let dirType = "noDir"
 
         if( build.buildType == 0 ){
-            let type = build.type;
-            mCreateWall(px, py, pz, type, player_id);
+            dirType = build.type;
+            //mCreateWall(px, py, pz, type, player_id);
+            //ws.send("playerBuild "+build.buildType+" "+px+" "+py+" "+pz+" "+dirType+" "+player_id);
         }else if( build.buildType == 1 ){
-            mCreateFloor(px, py, pz, player_id);
+            //mCreateFloor(px, py, pz, player_id);
         }else if( build.buildType == 2 ){
-            let type = build.type;
-            mCreateSlope(px, py, pz, type, player_id);
+            dirType = build.type;
+            //let type = build.type;
+            //mCreateSlope(px, py, pz, type, player_id);
         }else if( build.buildType == 3 ){
-            mCreateCone(px, py, pz, player_id);
+            //mCreateCone(px, py, pz, player_id);
         }
-        mPlayAudioBuffer(mArrayAudio[4])
+        ws.send("playerBuild "+build.buildType+" "+px+" "+py+" "+pz+" "+dirType+" "+player_id);
+        //mPlayAudioBuffer(mArrayAudio[4])
 
     }
 
@@ -3210,8 +3494,8 @@ async function game() {
     function mDrawCanvasDamage(){
         //console.log("mDrawCanvasDamage")
 
-        //canvasDamage.setAttribute("width", width);
-        //canvasDamage.setAttribute("height", height);
+        canvasDamage.setAttribute("width", width);
+        canvasDamage.setAttribute("height", height);
         let W_ = canvasDamage.width;
         let H_ = canvasDamage.height;
         //console.log("canvasDamage:"+W_+", "+H_)

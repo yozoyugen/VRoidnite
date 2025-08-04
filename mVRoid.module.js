@@ -32,7 +32,8 @@ loaderGLTF.register( ( parser ) => {
 
 
 //let array_gltfVrm = [];
-let modelURL = ['./model/669239405689726719.vrm',
+let modelURL = ['./model/669239405689726719mdf.vrm',
+                './model/3658448283550216100mdf.vrm',
                 './model/darkness000.vrm',
                 './model/shibu000.vrm',
                 './model/3658448283550216100.vrm',
@@ -176,6 +177,15 @@ async function mCreateVRM(characterType=0){
         element.settings.gravityPower = 1.0;
         //console.log(element.settings)
     });
+
+    let vrm_matrials = vrm.materials;
+    vrm_matrials.forEach((mat) => {
+        mat.transparent = false;
+        mat._alphaTest = 0.5;
+        //console.log("mat.transparent:", mat.transparent)
+        //console.log("mat._alphaTest:", mat._alphaTest)
+    });
+
 
     // Add look at quaternion proxy to the VRM; which is needed to play the look at animation
     const lookAtQuatProxy = new VRMLookAtQuaternionProxy( vrm.lookAt );
