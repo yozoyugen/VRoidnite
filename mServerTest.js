@@ -27,7 +27,7 @@ let build_id = 0;
 
 wss.on('connection', (ws) => {
   clients.push(ws);
-  console.log('クライアントが接続しました');
+  console.log('Client connected');
 
   ws.on('message', (message) => {
     const messageString = message.toString();
@@ -150,10 +150,9 @@ wss.on('connection', (ws) => {
   });
 });
 
-// サーバーの起動
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`サーバーが起動しました: http://localhost:${PORT}`);
+  console.log(`Server started: http://localhost:${PORT}`);
 });
 
 function mBroadCast(msg){
