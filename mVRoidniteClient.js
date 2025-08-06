@@ -34,14 +34,34 @@ game();
 //window.addEventListener('DOMContentLoaded', init);
 async function game() {
 
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    const canvas2d = document.querySelector( '#canvas-2d' );
+    const canvasDamage = document.querySelector( '#canvas-damage' );
+        canvasDamage.style.visibility ="hidden";
+    const canvasEmote = document.querySelector( '#canvas-emote' );
+        canvasEmote.style.visibility ="hidden"; 
+    const canvasLoad = document.querySelector( '#canvas-load' );
+    mDrawLoading()
+
+
     let array_players = [];
     let array_player = {};
     let array_playerMesh = {};
 
+    console.log("window.location.host:", window.location.host);
     //const ws = new WebSocket("ws://localhost:3000"); //local
-    let wsurl = "wss://" + window.location.host + "/ws";
-    const ws = new WebSocket(wsurl); //deploy
+    //let wsurl = "wss://" + window.location.host + "/ws";
+    //const ws = new WebSocket(wsurl); //deploy
 
+    let wsurl = "";
+    if(window.location.host=="localhost:3000"){
+        wsurl = "ws://"+window.location.host
+    }else{
+        wsurl = "wss://" + window.location.host + "/ws";
+    }
+    console.log("wsurl:", wsurl);
+    const ws = new WebSocket(wsurl);
 
     ws.onopen = function (event) {
         ws.send("websocket-open");
@@ -275,7 +295,7 @@ async function game() {
                 mArrayAudio[i] = audioBuffers[i];
                 //console.log(audioBuffers[i])
             }
-            //console.log("sound loaded")
+            console.log("sound loaded")
         });    
     
     }
@@ -299,16 +319,6 @@ async function game() {
 
     const textureLoader = new THREE.TextureLoader();
     const firingTexture = textureLoader.load('./image/fire4.jpg');
-
-    
-    
-    let width = window.innerWidth;
-    let height = window.innerHeight;
-    const canvas2d = document.querySelector( '#canvas-2d' );
-    const canvasDamage = document.querySelector( '#canvas-damage' );
-        canvasDamage.style.visibility ="hidden";
-    const canvasEmote = document.querySelector( '#canvas-emote' );
-        canvasEmote.style.visibility ="hidden";        
 
     
     let mJumpVelocity = 11; //6;
@@ -2208,6 +2218,8 @@ async function game() {
 
     //mPlayAudioBuffer(mArrayAudio[1])
 
+    canvasLoad.style.visibility ="hidden";
+
     tick();
     function tick() {
 
@@ -3634,7 +3646,25 @@ async function game() {
         context2d.closePath();
         context2d.stroke();
     }
-    //mDraw2Dcontext()
 
+
+    function mDrawLoading(){
+        //console.log("mDraw2Dcontext")
+
+        canvasLoad.setAttribute("width", width);
+        canvasLoad.setAttribute("height", height);
+        var W_ = canvasLoad.width;
+        var H_ = canvasLoad.height;
+        //console.log("canvas2d:"+W_+", "+H_)
+
+        const contextLoad = canvasLoad.getContext('2d');
+        let fontSize = W_/100;
+        contextLoad.font = fontSize + 'px Bold Arial';
+        contextLoad.fillStyle = "white"
+        contextLoad.textAlign = "center"
+        
+        contextLoad.fillText("Loading", W_/2, H_/2);
+                
+    }
 
 }//init
